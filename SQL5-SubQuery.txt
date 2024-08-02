@@ -1,0 +1,266 @@
+CREATE DATABASE SubQueryDB
+GO 
+USE SubQueryDB
+GO
+CREATE TABLE Curators(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(MAX) CHECK ([Name]!='') NOT NULL,
+[Surname] NVARCHAR(MAX) CHECK([Surname]!='') NOT NULL,
+)
+GO
+CREATE TABLE Faculties(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Financing] MONEY CHECK([Financing]>0) DEFAULT 0 NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+)
+GO
+CREATE TABLE Subjects(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL
+)
+GO
+CREATE TABLE Teachers(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Surname] NVARCHAR(100) CHECK([Surname]!='') UNIQUE NOT NULL,
+[Salary] MONEY CHECK([Salary]>0) NOT NULL
+)
+GO
+CREATE TABLE Students(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Surname] NVARCHAR(100) CHECK([Surname]!='') UNIQUE NOT NULL,
+[Rating] INT CHECK([Rating]>0) NOT NULL
+)
+GO
+CREATE TABLE MyDepartments(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Financing] MONEY CHECK([Financing]>0) DEFAULT 0 NOT NULL,
+[FacultyId]  INT FOREIGN KEY REFERENCES Faculties(Id)   NOT NULL  
+)
+GO
+CREATE TABLE Groups(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Year] INT CHECK([Year]>=1 AND [Year]<=5) NOT NULL,
+[DepartmentId] INT FOREIGN KEY REFERENCES MyDepartments(Id) NOT NULL
+)
+GO
+CREATE TABLE Lecturers(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[LectureRoom] NVARCHAR(MAX) CHECK([LectureRoom]!='') NOT NULL,
+[SubjectId] INT FOREIGN KEY REFERENCES Subjects(Id) NOT NULL,
+[TeacherId] INT FOREIGN KEY REFERENCES Teachers(Id) NOT NULL
+)
+GO
+CREATE TABLE GroupsCurators(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[CuratorId] INT FOREIGN KEY REFERENCES Curators(Id) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL
+)
+GO
+CREATE TABLE GroupsLectures(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL,
+[LecturerId] INT FOREIGN KEY REFERENCES Lecturers(Id) NOT NULL
+)
+GO
+CREATE TABLE GroupsStudents(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL,
+[StudentId] INT FOREIGN KEY REFERENCES Students(Id) NOT NULL
+)
+GO
+INSERT INTO Curators ([Name], [Surname]) 
+VALUES ('John', 'Doe'), ('Jane', 'Smith'), 
+('Michael', 'Johnson'),('Emily', 'Davis');
+GO
+INSERT INTO Faculties ([Financing], [Name]) 
+VALUES (100000, 'Engineering'),(120000, 'Science')
+,(90000, 'Arts'),(110000, 'Business');
+GO
+INSERT INTO Subjects ([Name]) 
+VALUES ('Mathematics'),('Physics'),
+ ('Computer Science'),('Literature'),
+ ('History'),('Biology');
+ GO
+ INSERT INTO Teachers ([Name], [Surname], [Salary]) 
+ VALUES ('John', 'Doe', 50000), ('Jane', 'Smith', 55000),
+ ('Michael', 'Johnson', 60000), ('Emily', 'Davis', 52000),
+ ('David', 'Brown', 58000),('Sarah', 'Wilson', 53000);
+ GO
+  INSERT INTO Lecturers ([LectureRoom], [SubjectId], [TeacherId]) 
+ VALUES ('Room A', 1, 1),('Room B', 2, 2),
+  ('Room C', 3, 3),('Room D', 4, 4);
+  GO
+  INSERT INTO MyDepartments ([Name], [Financing], [FacultyId]) 
+VALUES ('Computer Science', 50000, 2), ('Electrical Engineering', 60000, 1),
+('Mechanical Engineering', 55000, 1),('Art', 58000, 3);
+GO
+INSERT INTO Groups ([Name], [Year], [DepartmentId]) 
+VALUES ('Group A', 1, 1),('Group B', 2, 2),
+('Group C', 3, 3),('Group D', 4, 3),('Group E', 5, 4),('Group E', 5, 1),('Group E', 5, 1);
+GO
+INSERT INTO Students ([Name], [Surname], [Rating]) VALUES 
+('John', 'Doe', 85),
+('Jane', 'Smith', 92),
+('Michael', 'Johnson', 78),
+('Emily', 'Brown', 88),
+('William', 'Jones', 95);
+GO
+INSERT INTO GroupsStudents ([GroupId], [StudentId]) VALUES 
+(4, 1), -- Group 1 with Student 1
+(5, 2), -- Group 2 with Student 2
+(6, 3),
+(8, 3),
+(11, 3),
+(12, 4),
+(11, 1),
+(12, 2),
+(12, 1),
+(11, 3),-- Group 3 with Student 3
+(7, 4);
+GO
+--Execute untill here
+INSERT INTO GroupsCurators ([CuratorId], [GroupId])
+VALUES (1, 4),(2,5),(3,6),(4,7);
+INSERT INTO Groups ([Name], [Year], [DepartmentId]) 
+VALUES ('Group F', 5, 1),('Group AB', 5, 1);
+GO
+INSERT INTO GroupsLectures ([GroupId], [LecturerId])
+VALUES (4, 1),(5,2),(6,3),(7,4);
+
+--1. Print numbers of buildings 
+--if the total financing fund of the departments located in them exceeds 100,000.0.
+SELECT  COUNT(D1.[Name] )
+FROM MyDepartments AS D1
+WHERE D1.Id IN (SELECT D.Id FROM MyDepartments AS D, Faculties AS F
+            WHERE F.Id=D.FacultyId
+			GROUP BY D.Id
+			HAVING SUM(D.Financing)>50000)
+
+----2. Print names of the 5th year groups of the Computer Science department
+----that have more than 2 double periods in the first week.
+--SELECT G.[Name]
+--FROM Groups AS G,MyDepartments AS D,GroupsLectures AS GL
+--WHERE G.Year=5 AND G.DepartmentId=D.Id AND D.[Name]='Computer Science' 
+--AND  G.Id=GL.GroupId AND  (SELECT COUNT(Gl.LecturerId) FROM Groups AS G,GroupsLectures AS GL
+--WHERE G.Id=GL.GroupId )>2
+
+--3. Print names of the groups whose rating (average rating of all 
+--students in the group) is greater than the rating of the "Group F" 
+--group.
+
+SELECT 
+	G.Id,
+	G.[Name],
+	AVG(S.Rating) AS "Group Average Rating"
+FROM 
+	Groups AS G,
+	Students AS S,
+	GroupsStudents AS GS
+WHERE 
+	GS.GroupId = G.Id AND
+	GS.StudentId = S.Id
+GROUP BY
+	G.[Id],
+	G.[Name]
+HAVING AVG(S.Rating) > (
+	SELECT 
+		AVG(S.Rating)
+	FROM 
+		Students AS S,
+		Groups AS G,
+		GroupsStudents AS GS
+	WHERE 
+		GS.StudentId = S.Id AND
+		GS.GroupId = G.ID AND
+		G.[Name] = 'Group A')
+
+--5. Print names of groups with more than one curator.
+
+SELECT 
+	G.Id,
+	G.[Name],
+	G.[Year]
+FROM 
+	Groups AS G
+WHERE
+	G.Id IN(
+		SELECT
+			G.Id
+		FROM 
+			Groups AS G,
+			Curators AS C,
+			GroupsCurators AS GC
+		WHERE 
+			GC.CuratorId = C.Id AND
+			GC.GroupId = G.Id
+		GROUP BY
+			G.Id
+		HAVING 
+			COUNT(G.ID) > 3)
+
+--. Print names of the groups whose rating (the average rating 
+--of all students of the group) is less than the minimum rating 
+--of the 5th year groups.
+SELECT G.Id,G.[Name],AVG(S.Rating) AS "Group Average Rating"
+FROM Groups AS G,Students AS S,
+	GroupsStudents AS GS
+WHERE GS.GroupId = G.Id AND
+	GS.StudentId = S.Id
+GROUP BY
+	G.[Id],
+	G.[Name]
+HAVING(AVG(S.Rating)> (SELECT MIN(S.Rating) AS "Group Average Rating"
+FROM Groups AS G,Students AS S,
+	GroupsStudents AS GS
+WHERE GS.GroupId = G.Id AND
+	GS.StudentId = S.Id AND G.[Year]=5))
+
+
+--. Print names of the faculties
+--with total financing fund of the departments greater
+--than the total financing fund of the Computer Science department.
+SELECT F.[Name],SUM(D.Financing) AS 'TotalFinancing'
+FROM Faculties AS F,MyDepartments AS D
+WHERE F.Id=D.FacultyId
+GROUP BY F.[Name],F.Id
+HAVING(SUM(D.Financing)>(SELECT SUM(D.Financing) 
+FROM MyDepartments AS D
+WHERE D.[Name]='Computer Science'))
+
+--. Print names of the subjects and full names of the teachers who 
+--deliver the greates number of lectures in them.
+
+--9. Print name of the subject in which the least number of lectures 
+--are delivered.
+SELECT TOP(1)S.[Name]
+FROM Subjects AS S,Lecturers AS L
+WHERE L.SubjectId=S.Id AND S.Id= ( SELECT TOP(1) S.Id
+FROM Subjects AS S,Lecturers AS L
+WHERE L.SubjectId=S.Id
+GROUP BY S.Id
+ORDER BY  COUNT(*) ASC
+)
+
+
+--0. Print number of students and subjects taught at the Software 
+--Development department.
+SELECT 
+	COUNT(*) 
+FROM 
+	Students AS S,
+	GroupsStudents AS GS,
+	Groups AS G,
+	MyDepartments AS D,
+	GroupsLectures AS GL,
+	Lecturers AS L
+WHERE 
+	GS.StudentId = S.Id AND
+	GS.GroupId = G.Id AND
+	G.Id =DepartmentId AND
+	D.[Name] = 'Art' AND
+	GL.Id = G.Id AND
+	L.Id = Gl.LecturerId

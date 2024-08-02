@@ -1,0 +1,139 @@
+--Users id,fullname,age
+--Posts id,content,UserId
+
+--PostRatings Id,Point(1-5),UserId,PostId
+
+--Comments Id,PostId,UserId,ParentId
+
+--CommentsRating Id,Point(1-5),UserId,CommentId
+
+
+
+
+
+
+
+CREATE DATABASE InstagramDB
+GO
+USE InstagramDB
+GO
+CREATE TABLE Users(
+[Id] INT PRIMARY KEY NOT NULL,
+[Fullname] NVARCHAR(MAX)  NOT NULL CHECK([Fullname]!=''),
+[Age] INT CHECK([Age]>10) NOT NULL
+)
+GO
+CREATE TABLE Posts(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Content] NVARCHAR(MAX) NOT NULL CHECK([Content]!=''),
+[UserId] INT FOREIGN KEY REFERENCES  Users(Id)  ON DELETE SET NULL
+)
+GO
+CREATE TABLE PostRatings(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Point] INT CHECK([Point]>0 AND [Point]<6) NOT NULL,
+[UserId] INT FOREIGN KEY REFERENCES  Users(Id)  ON DELETE CASCADE,
+[PostId] INT FOREIGN KEY REFERENCES  Posts(Id) ON DELETE CASCADE
+)
+GO
+CREATE TABLE Comments(
+[Id] INT PRIMARY KEY  NOT NULL,
+[Content] NVARCHAR(MAX) NOT NULL CHECK([Content]!=''),
+[UserId] INT FOREIGN KEY REFERENCES  Users(Id)  ON DELETE CASCADE,
+[PostId] INT FOREIGN KEY REFERENCES  Posts(Id) ON DELETE CASCADE,
+[ParentId] INT 
+)
+GO
+CREATE TABLE CommentsRatings(
+[Id] INT PRIMARY KEY  NOT NULL,
+[Point] INT CHECK([Point]>0 AND [Point]<6) NOT NULL,
+[UserId] INT FOREIGN KEY REFERENCES  Users(Id)  ON DELETE CASCADE,
+[CommentId] INT FOREIGN KEY REFERENCES  Comments(Id) 
+)
+GO
+INSERT INTO Users([Id],[Fullname],[Age])
+VALUES(1,'Elmira',18),(2,'Aysu',19),(3,'Salim',23)
+
+GO
+INSERT INTO Posts([Content],[UserId])
+VALUES
+('Gorgeous scene',1),('HBD to us',1),('Our anniversery',1),
+('Disco girl',2),
+('The best movie',3),('Shine like diamond',3),('I am not okay',3),('Sunny',3)
+
+GO
+INSERT INTO PostRatings([Point],[UserId],[PostId])
+VALUES
+(4,1,1),(3,1,2),(1,1,3),--Elmira's posts
+(2,2,4),--Aysu's post
+(5,3,5),(1,3,6),(4,3,7),(3,3,8)--Salim's posts
+
+
+GO
+INSERT INTO Comments([Id],[Content],[UserId],[PostId],[ParentId])
+VALUES
+(1,'OMG',1,1,NULL),(2,'Loved that',1,1,NULL),(3,'HBD girls',1,2,NULL),(4,'Congrats',1,3,NULL),--Elmira's comments
+	(5,'You shocked',1,1,1),(6,'Thanks',1,2,2),--Elmira's sub comments
+
+(7,'Kissies',2,4,NULL),(8,'ILY',2,4,NULL),--Aysu's comments
+	(9,'ahaha',2,4,7),--Aysu's sub comment
+
+(10,'Absolutely',3,5,NULL),(11,'OFC',3,5,NULL),(12,'WOW',3,6,NULL),(13,'Why?',3,7,NULL),--Salim's comments
+	(14,'YESS',3,5,10),(15,'IDK',3,7,13)--Salim's sub comments
+
+GO
+INSERT INTO CommentsRatings([Id],[Point],[UserId],[CommentId])
+VALUES
+(1,2,1,1),(2,3,1,2),(3,5,1,3),--Elmira
+	(4,3,1,5),
+(5,4,2,8),--Aysu
+	(6,2,2,9),
+(7,1,3,10)--Salim
+
+GO
+--1.show users,posts
+SELECT *
+FROM Users AS U,Posts AS P
+WHERE U.Id=P.UserId
+
+--2.her bir postun adi,rating
+SELECT P.Content,PR.Point
+FROM Posts AS P,PostRatings AS PR
+WHERE PR.PostId=P.Id
+
+--3.her bir commentin alt commentlerini gostermek ve avg gostermek
+SELECT C.Content,C1.Content
+FROM Comments AS C,(SELECT * 
+                    FROM Comments AS C2
+					WHERE C2.ParentId IN (SELECT C3.Id FROM Comments AS C3)) AS C1
+WHERE C.Id=C1.ParentId
+
+
+
+--4.Rating ,umumi postlarin avg rating den chox olanlari gostermek
+SELECT PR.Point
+FROM PostRatings AS PR
+WHERE PR.Point>(SELECT AVG(PR.Point)
+                  FROM PostRatings AS PR)
+
+
+--5.Ratingi umumi commentlerin ratingden chox olanlari gostermek
+SELECT CR.Point
+FROM CommentsRatings AS CR
+WHERE CR.Point>(SELECT AVG(CR.Point)
+                  FROM CommentsRatings AS CR)
+
+
+--6.en chox postu olan useri gostermek
+SELECT TOP(1) U.Id, COUNT(P.Id) AS 'PostCount'
+FROM Users AS U,Posts AS P
+WHERE U.Id=P.UserId
+GROUP BY U.Id
+ORDER BY COUNT(P.Id) DESC 
+
+
+--7.postunun ratingi en chox olan user i gostermek ve rating
+SELECT TOP(1) U.Fullname,PR.Point
+FROM PostRatings AS PR,Users AS U
+WHERE U.Id=PR.UserId 
+ORDER BY PR.Point DESC 

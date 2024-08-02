@@ -1,0 +1,116 @@
+USE master
+CREATE  DATABASE AcademyDB2
+USE AcademyDB2
+
+CREATE TABLE Departments(
+[Id]INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Financing] MONEY DEFAULT 0  CHECK (Financing>=0),
+[Name] NVARCHAR(100) UNIQUE CHECK ([Name]!='') NOT NULL
+)
+GO
+CREATE TABLE Faculites(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Dean] NVARCHAR(MAX) CHECK ([Dean]!='') NOT NULL,
+[Name] NVARCHAR(100) UNIQUE CHECK ([Name]!='') NOT NULL
+)
+GO
+CREATE TABLE Groups(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) UNIQUE CHECK([Name]!='') NOT NULL,
+[Rating] INT CHECK([Rating]>=0 AND [Rating]<=5) NOT NULL,
+[Year] INT CHECK([Year]>=1 AND [Year]<=5) NOT NULL
+)
+GO
+CREATE TABLE Teachers(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100)  CHECK([Name]!='') NOT NULL,
+[Surname] NVARCHAR(100)  CHECK([Surname]!='') NOT NULL,
+[EmploymentDate] DATE CHECK(YEAR([EmploymentDate])>=1990) NOT NULL,
+[IsAsisstant] BIT DEFAULT 0 NOT NULL,
+[IsProfessor] BIT DEFAULT 0 NOT NULL,
+[Position] NVARCHAR(MAX) CHECK([Position]!='') NOT NULL,
+[Premium] MONEY DEFAULT 0 CHECK([Premium]>=0) NOT NULL,
+[Salary] MONEY CHECK([Salary]>0) NOT NULL
+)
+INSERT INTO Departments([Name],[Financing])
+VALUES('CapitalByte Solutions',10000),
+('Code Academy',24000),
+('Step IT',30000)
+
+INSERT INTO Groups([Name],[Rating],[Year])
+VALUES('FBMS_1225',4,3),
+('FBMS_3220',5,2),
+('FBMS_1142',3,5)
+
+INSERT INTO Teachers([Name],[Surname],[Position],[Premium],[IsProfessor],[IsAsisstant],[Salary],[EmploymentDate])
+VALUES('Elmira','Ahmadova','Tech teacher',300,1,0,6000,'2005-06-20'),
+('Ramil','Aliyev','Music teacher',100,1,0,3000,'2014-02-15'),
+('Jessica', 'Anderson', 'Foreign Language Teacher', 500, 0, 1, 4000, '2018-06-25'),
+('Elizabeth', 'Wilson', 'Special Education Teacher', 700, 1, 0, 4700, '2014-04-18'),
+('David', 'Brown', 'History Teacher', 550, 0, 1, 1200, '2003-08-20'),
+('Michael', 'Johnson', 'Science Teacher', 600, 1, 0, 4500, '2017-05-15'),
+('Emily', 'Smith', 'Math Teacher', 500, 0, 1, 4000, '2018-09-10'),
+('Christopher', 'Martinez', 'Computer Science Teacher', 650, 0, 0, 4600, '2006-03-08')
+
+
+INSERT INTO Faculites([Name],[Dean])
+VALUES('Engineering', 'Dr. Thomas Anderson'),
+('Business', 'Prof. Jennifer Carter'),
+('Science', 'Prof. Sarah Walker'),
+('Health Sciences', 'Dr. David Garcia'),
+('Information Technology', 'Dr. Christopher Wilson'),
+('Law', 'Prof. Jessica Evans'),
+('Fine Arts', 'Prof. Daniel Lee')
+--1. Print departments table but arrange its fields in the reverse order.
+SELECT *
+FROM Departments
+ORDER BY  Id DESC
+
+--2. Print group names and their ratings using “Group Name”
+--and “Group Rating”, respectively, as names of the fields.
+SELECT [Name] AS Group_Name, [Rating] AS Group_Rating
+FROM Groups
+
+--3. Print for the teachers their surname, percentage of wage rate
+--to premium ratio and percentage of wage rate to the salary ratio
+--(the amount of wage rate and premium).
+SELECT [Surname],[Salary],[Premium]
+From Teachers
+
+--4. Print the faculty table as a single field in the following format:
+--"The dean of faculty [faculty] is [dean]".
+SELECT 'The dean of faculty '+ [Name] +' is '+[Dean]
+FROM Faculites
+
+--Identify names of the teachers who are professors and whose
+--wage rate exceeds 1050.
+SELECT [Name]
+FROM Teachers AS T
+WHERE T.IsProfessor=1 AND T.Salary>=3050
+
+--6. Print names of the departments whose funding is less than
+--11,000 or more than 25,000.
+SELECT [Name]
+FROM Departments AS D
+WHERE D.Financing>=25000 OR D.Financing<=11000
+
+--there ise a little gap between 6-9 or 9-11 because 
+--the tasks in this range were simple and repetitive
+--so I didn't write
+
+
+--9. Print surnames, positions, wage rates, and premia of assistants
+--whose premium is in the range from 160 to 550.
+
+SELECT [Surname],[Position],[Salary],[Premium]
+FROM Teachers AS T
+WHERE T.IsAsisstant=1 AND T.Premium BETWEEN 159 AND 551
+
+--11.Print surnames and positions of the teachers who were hired
+--before 01.01.2008.
+SELECT [Surname],[Position]
+FROM Teachers AS T
+WHERE YEAR(T.EmploymentDate)<2008
+
+
+

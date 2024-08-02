@@ -1,0 +1,152 @@
+CREATE DATABASE AcademyDB
+GO 
+USE AcademyDB
+GO
+CREATE TABLE Curators(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(MAX) CHECK ([Name]!='') NOT NULL,
+[Surname] NVARCHAR(MAX) CHECK([Surname]!='') NOT NULL,
+)
+GO 
+CREATE TABLE MyDepartments(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Financing] MONEY CHECK([Financing]>0) DEFAULT 0 NOT NULL,
+[FacultyId]  INT FOREIGN KEY REFERENCES Faculties(Id)   NOT NULL  
+)
+GO
+CREATE TABLE Faculties(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Financing] MONEY CHECK([Financing]>0) DEFAULT 0 NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+)
+GO
+CREATE TABLE Groups(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Year] INT CHECK([Year]>=1 AND [Year]<=5) NOT NULL,
+[DepartmentId] INT FOREIGN KEY REFERENCES MyDepartments(Id) NOT NULL
+)
+GO
+CREATE TABLE Lecturers(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[LectureRoom] NVARCHAR(MAX) CHECK([LectureRoom]!='') NOT NULL,
+[SubjectId] INT FOREIGN KEY REFERENCES Subjects(Id) NOT NULL,
+[TeacherId] INT FOREIGN KEY REFERENCES Teachers(Id) NOT NULL
+)
+GO
+CREATE TABLE Subjects(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL
+)
+GO
+CREATE TABLE GroupsCurators(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[CuratorId] INT FOREIGN KEY REFERENCES Curators(Id) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL
+)
+GO
+CREATE TABLE GroupsLectures(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[GroupId] INT FOREIGN KEY REFERENCES Groups(Id) NOT NULL,
+[LecturerId] INT FOREIGN KEY REFERENCES Lecturers(Id) NOT NULL
+)
+GO
+CREATE TABLE Teachers(
+Id INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(100) CHECK([Name]!='') UNIQUE NOT NULL,
+[Surname] NVARCHAR(100) CHECK([Surname]!='') UNIQUE NOT NULL,
+[Salary] MONEY CHECK([Salary]>0) NOT NULL
+)
+
+INSERT INTO Curators ([Name], [Surname]) 
+VALUES ('John', 'Doe'), ('Jane', 'Smith'), 
+('Michael', 'Johnson'),('Emily', 'Davis');
+
+INSERT INTO Faculties ([Financing], [Name]) 
+VALUES (100000, 'Engineering'),(120000, 'Science')
+,(90000, 'Arts'),(110000, 'Business');
+
+
+INSERT INTO MyDepartments ([Name], [Financing], [FacultyId]) 
+VALUES ('Computer Science', 50000, 2), ('Electrical Engineering', 60000, 1),
+('Mechanical Engineering', 55000, 1),('Art', 58000, 3);
+
+
+INSERT INTO Groups ([Name], [Year], [DepartmentId]) 
+VALUES ('Group A', 1, 2),('Group B', 2, 3),
+('Group C', 3, 5),('Group D', 4, 3),('Group E', 5, 4);
+
+INSERT INTO Subjects ([Name]) 
+VALUES ('Mathematics'),('Physics'),
+ ('Computer Science'),('Literature'),
+ ('History'),('Biology');
+
+ INSERT INTO Teachers ([Name], [Surname], [Salary]) 
+ VALUES ('John', 'Doe', 50000), ('Jane', 'Smith', 55000),
+ ('Michael', 'Johnson', 60000), ('Emily', 'Davis', 52000),
+ ('David', 'Brown', 58000),('Sarah', 'Wilson', 53000);
+
+ INSERT INTO Lecturers ([LectureRoom], [SubjectId], [TeacherId]) 
+ VALUES ('Room A', 1, 1),('Room B', 2, 2),
+  ('Room C', 3, 3),('Room D', 4, 4);
+
+INSERT INTO GroupsCurators ([CuratorId], [GroupId])
+VALUES (1, 4),(2,5),(3,6),(4,7);
+
+INSERT INTO GroupsLectures ([GroupId], [LecturerId])
+VALUES (4, 1),(5,2),(6,3),(7,4);
+
+SELECT *
+FROM Faculties
+
+--1. Print all possible pairs of lines of teachers and groups.
+
+SELECT G.[Name],T.[Name]
+FROM Teachers AS T,Groups AS G,Lecturers AS L,GroupsLectures AS GL
+WHERE L.TeacherId=T.Id AND L.Id=GL.LecturerId AND GL.GroupId=G.Id
+
+--2. Print names of faculties, where financing fund of departments
+--exceeds financing fund of the faculty.
+
+SELECT F.[Name]
+FROM Faculties AS F,MyDepartments AS D
+WHERE F.Financing<D.Financing
+
+--3. Print names of the group curators and groups names they are
+--supervising.
+SELECT C.[Name],G.[Name]
+FROM GroupsCurators AS GC,Curators AS C,Groups AS G
+WHERE GC.CuratorId=C.Id AND GC.GroupId=G.Id
+
+--4. Print names of the teachers who deliver lectures in the group
+--"A".
+SELECT T.[Name]
+FROM Teachers AS T,Groups AS G,Lecturers AS L,GroupsLectures AS GL
+WHERE L.TeacherId=T.Id AND L.Id=GL.LecturerId 
+AND GL.GroupId=G.Id AND G.[Name]='Group A'
+
+--5. Print names of the teachers and names of the faculties where
+--they are lecturing.
+
+SELECT T.[Name],F.[Name]
+FROM  MyDepartments AS D,Teachers AS T,Groups AS G,Lecturers AS L,
+GroupsLectures AS GL,Faculties AS F
+WHERE L.TeacherId=T.Id AND L.Id=GL.LecturerId
+AND F.Id=D.FacultyId AND G.DepartmentId=D.Id
+AND GL.GroupId=G.Id
+
+--6. Print names of the departments and names of the groups that
+--relate to them.
+SELECT D.[Name],G.[Name]
+FROM  MyDepartments AS D,Groups AS G,
+GroupsLectures AS GL
+WHERE G.DepartmentId=D.Id AND GL.GroupId=G.Id
+
+--7. Print names of the subjects that the teacher "Emily Davis"
+--teaches.
+SELECT T.[Name],S.[Name]
+FROM Teachers AS T,Subjects AS S,Lecturers AS L
+WHERE T.[Name]='Emily' AND L.SubjectId=S.Id AND L.TeacherId=T.Id
+
+--i think it is enough

@@ -1,0 +1,158 @@
+CREATE DATABASE SportGoods
+GO
+USE SportGoods
+GO
+CREATE TABLE Categories(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[Name] NVARCHAR(30) NOT NULL,
+[SubCategoryId] INT FOREIGN KEY REFERENCES Categories([Id]) 
+)
+GO
+CREATE TABLE Vendor(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[VendorName] NVARCHAR(30) NOT NULL
+)
+GO
+CREATE TABLE Products(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[ProductName] NVARCHAR(30) NOT NULL,
+[ProductPrice] MONEY NOT NULL,
+[VendorId] INT FOREIGN KEY REFERENCES Vendor([Id]) NOT NULL,
+[CategoryId] INT FOREIGN KEY REFERENCES Categories([Id]) NOT NULL,
+)
+GO
+CREATE TABLE Customers(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[CustomerName] NVARCHAR(30) NOT NULL,
+[BirthDate] DATE NOT NULL
+)
+GO
+CREATE TABLE Sales(
+[Id] INT PRIMARY KEY IDENTITY(1,1) NOT NULL,
+[CustomerId] INT FOREIGN KEY REFERENCES Customers([Id]) NOT NULL,
+[ProductId] INT FOREIGN KEY REFERENCES Products([Id]) NOT NULL,
+[DateOfSale] DATE NOT NULL
+)
+GO
+
+INSERT INTO Categories([Name])
+VALUES('Sport Shoes')
+GO
+INSERT INTO Categories([Name], [SubCategoryId])
+VALUES ('Sneaker', 1)
+GO
+INSERT INTO Vendor([VendorName])
+VALUES('UMBRO'), ('ADIDAS'), ('NIKE')
+GO
+INSERT INTO Products([ProductName], [ProductPrice], [VendorId], [CategoryId])
+VALUES('NIKE Sneaker', 40, 1, 1), ('Sport Suit', 100, 2, 2)
+GO
+INSERT INTO  Customers([BirthDate], [CustomerName])
+VALUES('1988-11-01', 'John'), ('1993-03-01', 'Aslan'), ('1999-12-03', 'Murad'), ('1994-01-12', 'Haci')
+GO
+INSERT INTO Sales([CustomerId], [DateOfSale], [ProductId])
+VALUES(1, '2023-06-15', 1), (2, '2023-02-03', 2)
+GO
+--2. A user-defined function returns the average price of a product
+--of a particular type. Product type is passed as a parameter. For example, the average price of shoes.
+CREATE FUNCTION GetAvg(@typeId AS INT)
+RETURNS TABLE
+AS
+ RETURN(
+	SELECT 'average :'+CAST(AVG(P.ProductPrice)AS nvarchar) AS 'AVERAGE'
+	FROM Products AS P
+	WHERE P.CategoryId=@typeId
+)
+SELECT * FROM GetAvg(1)
+	
+--3. A user-defined function returns the average price of sales for each date when something was sold.
+CREATE FUNCTION GetAvgPrice2()
+RETURNS TABLE
+AS
+RETURN(
+	SELECT  CAST(S.DateOfSale AS NVARCHAR(30)) +': '+ CAST(AVG(P.ProductPrice)AS NVARCHAR(30)) AS 'INFO'
+	FROM Sales AS S
+	INNER JOIN Products AS P
+	ON S.ProductId=P.Id
+	GROUP BY S.DateOfSale
+	)
+SELECT* FROM GetAvgPrice2()
+
+--4. A user-defined function returns information about the last item
+--sold. The parameter for the last item sold is the date of sale.
+CREATE FUNCTION GetInfo3()
+RETURNS TABLE
+AS
+RETURN(
+ SELECT *
+ FROM Sales AS S1
+ WHERE S1.Id = (SELECT  TOP(1)S.Id
+	FROM Sales AS S
+	INNER JOIN Products AS P
+	ON S.ProductId=P.Id
+	GROUP BY S.DateOfSale,S.Id
+	ORDER BY DateOfSale DESC
+	))
+	
+GO
+SELECT* FROM GetInfo3()
+
+CREATE FUNCTION GetLastSaleProduct()
+RETURNS TABLE 
+AS
+RETURN(
+	SELECT TOP(1) P.CategoryId AS CategoryId, P.ProductName AS ProductName, P.ProductPrice AS ProductPrice, P.VendorId AS Manufacturer
+	FROM Sales AS S
+	INNER JOIN Products AS P
+	ON S.ProductId=P.Id 
+	ORDER BY S.DateOfSale DESC)
+GO
+SELECT *
+FROM GetLastSaleProduct()
+GO
+
+--5. A user-defined function returns information about the first item
+--sold. The parameter for the first item sold is the date of sale.
+CREATE FUNCTION GetFirstItem()
+RETURNS TABLE
+AS
+	RETURN(
+		SELECT TOP(1) P.ProductName,P.ProductPrice,P.CategoryId,S.DateOfSale
+		FROM Products AS P
+		INNER JOIN Sales AS S
+			ON S.ProductId=P.Id
+		ORDER BY S.DateOfSale
+	)
+GO
+SELECT*
+FROM GetFirstItem()
+
+--6. A user-defined function returns information about the specified
+--type of products of a particular manufacturer. Product type and manufacturer name are passed as parameters.
+CREATE FUNCTION ShowInfo5(@productType AS nvarchar(40),@productVendor AS nvarchar(40))
+RETURNS TABLE
+AS
+RETURN(
+	SELECT P.ProductName,P.ProductPrice,P.CategoryId,P.VendorId
+	FROM Products AS P
+	INNER JOIN Categories AS C
+	ON P.CategoryId=C.Id
+		INNER JOIN Vendor AS V
+		ON V.Id=P.VendorId
+		WHERE V.VendorName=@productVendor AND C.Name=@productType
+)
+GO
+SELECT * FROM ShowInfo5('Sport Shoes','UMBRO')
+
+--7. A user-defined function returns information about customers who will turn 46 this year.
+CREATE FUNCTION GetCustomers2()
+RETURNS TABLE
+AS
+	RETURN(
+		SELECT * 
+		FROM Customers AS C
+		WHERE YEAR(C.BirthDate)='1988'
+	)
+GO
+SELECT*
+FROM GetCustomers2()

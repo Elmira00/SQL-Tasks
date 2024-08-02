@@ -1,0 +1,55 @@
+--/ * 1. Get empid, firstname, lastname, country, region, city of all employees from USA. * /
+SELECT E.FirstName,E.LastName,E.CountryRegionName,E.City
+FROM Employees AS E
+WHERE E.CountryRegionName='United States'
+
+--/ * 2. Get the number of employees for each specialty. * /
+SELECT E.JobTitle,COUNT(*)
+FROM Employees AS E
+GROUP BY E.JobTitle
+
+--/ * 3. Count the number of people for each name. * /
+SELECT E.FirstName,COUNT(*)
+FROM Employees AS E
+GROUP BY E.FirstName
+
+--/ * 4. Get the most common name. * /
+SELECT TOP (1) E.FirstName,COUNT(*)
+FROM Employees AS E
+GROUP BY E.FirstName
+ORDER BY COUNT(*) DESC
+
+--5. Get the least common name. 
+SELECT TOP (1) E.FirstName,COUNT(*)
+FROM Employees AS E
+GROUP BY E.FirstName
+ORDER BY COUNT(*) 
+
+--6. Get the top 5 cities where the most workers are. 
+SELECT TOP (5) E.City,COUNT(*)
+FROM Employees AS E
+GROUP BY E.City
+ORDER BY COUNT(*) DESC
+--7Get the top 5 cities, which have the most unique specialties. 
+SELECT TOP(5) E.City, Count(E.City) AS "Count Of Speciality"
+FROM Employees AS E
+GROUP BY E.City
+ORDER BY "Count Of Speciality" ASC
+
+--8Issue mailing addresses for emailing to all employees
+--who started working on 1/01/2012. * /
+SELECT E.EmailAddress,E.StartDate
+FROM Employees AS E
+WHERE E.StartDate='2012-01-01' 
+
+--9Issue statistics in what year how many employees were employed. 
+SELECT YEAR(E.StartDate),COUNT(*)
+FROM Employees AS E
+GROUP BY YEAR(E.StartDate)
+
+--10Issue statistics in which year how many workers in which countries were employed.
+SELECT YEAR(E.StartDate),E.CountryRegionName,COUNT(*)
+FROM Employees AS E
+GROUP BY YEAR(E.StartDate),E.CountryRegionName
+ORDER BY YEAR(E.StartDate) DESC
+
